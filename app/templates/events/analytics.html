@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Event Analytics - EventFlow{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .stats-card {
+        @apply bg-white rounded-xl shadow-md p-6;
+    }
+    .stats-value {
+        @apply text-3xl font-bold text-gray-900;
+    }
+    .stats-label {
+        @apply text-sm text-gray-500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Event Analytics</h1>
+        <p class="mt-2 text-gray-600">Track your events' performance and engagement</p>
+    </div>
+
+    <!-- Overview Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="stats-card">
+            <div class="stats-value">{{ analytics.total_events }}</div>
+            <div class="stats-label">Total Events</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-value">{{ analytics.total_views }}</div>
+            <div class="stats-label">Total Views</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-value">{{ analytics.total_registrations }}</div>
+            <div class="stats-label">Total Registrations</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-value">${{ "%.2f"|format(analytics.total_revenue) }}</div>
+            <div class="stats-label">Total Revenue</div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Event Performance Chart -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Event Performance</h2>
+            <canvas id="eventPerformanceChart"></canvas>
+        </div>
+
+        <!-- Revenue Distribution Chart -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Revenue Distribution</h2>
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Event Details Table -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">Event Details</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registrations</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tickets Sold</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for event in analytics.events %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ event.title }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ event.views }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ event.registrations }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${{ "%.2f"|format(event.revenue) }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ event.ticket_stats.tickets_sold }} / {{ event.ticket_stats.total_tickets }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Prepare data for charts
+    const events = {{ analytics.events|tojson }};
+    
+    // Event Performance Chart
+    const performanceCtx = document.getElementById('eventPerformanceChart').getContext('2d');
+    new Chart(performanceCtx, {
+        type: 'bar',
+        data: {
+            labels: events.map(e => e.title),
+            datasets: [{
+                label: 'Views',
+                data: events.map(e => e.views),
+                backgroundColor: 'rgba(99, 102, 241, 0.5)',
+                borderColor: 'rgb(99, 102, 241)',
+                borderWidth: 1
+            }, {
+                label: 'Registrations',
+                data: events.map(e => e.registrations),
+                backgroundColor: 'rgba(168, 85, 247, 0.5)',
+                borderColor: 'rgb(168, 85, 247)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'pie',
+        data: {
+            labels: events.map(e => e.title),
+            datasets: [{
+                data: events.map(e => e.revenue),
+                backgroundColor: [
+                    'rgba(99, 102, 241, 0.5)',
+                    'rgba(168, 85, 247, 0.5)',
+                    'rgba(236, 72, 153, 0.5)',
+                    'rgba(34, 197, 94, 0.5)',
+                    'rgba(234, 179, 8, 0.5)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

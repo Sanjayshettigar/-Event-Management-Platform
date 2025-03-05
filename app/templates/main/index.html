@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Home - EventFlow{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4">
+    <div class="text-center py-16">
+        <h1 class="text-4xl font-bold text-gray-900">
+            Welcome back, {{ current_user.username }}!
+        </h1>
+        <p class="mt-4 text-xl text-gray-500">
+            Ready to manage your events?
+        </p>
+        <div class="mt-8">
+            <a href="{{ url_for('events.dashboard') }}" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                Go to Dashboard
+            </a>
+            <a href="{{ url_for('events.create') }}" class="ml-4 inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-gray-50">
+                Create Event
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Events - EventFlow{% endblock %}
+
+{% block extra_css %}
+<style>
+    .event-card {
+        @apply bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg;
+    }
+    
+    .event-image {
+        height: 200px;
+        background-size: cover;
+        background-position: center;
+    }
+    
+    .category-filter.active {
+        @apply bg-indigo-100 text-indigo-800;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Page Header -->
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Events</h1>
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('events.create') }}" class="btn-primary">
+                Create Event
+            </a>
+        {% endif %}
+    </div>
+    
+    <!-- Category Filters -->
+    <div class="mb-8">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Filter by Category</h2>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ url_for('events.list') }}" 
+               class="category-filter px-4 py-2 rounded-full text-sm font-medium {% if not selected_category_id %}active{% endif %}">
+                All Events
+            </a>
+            {% for category in categories %}
+                <a href="{{ url_for('events.list', category_id=category.id) }}" 
+                   class="category-filter px-4 py-2 rounded-full text-sm font-medium {% if selected_category_id == category.id %}active{% endif %}">
+                    {{ category.name }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Events Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for event in events %}
+            <div class="event-card">
+                <div class="event-image" style="background-image: url('{{ url_for('static', filename=event.banner_image) if event.banner_image else url_for('static', filename='images/default-event-banner.jpg') }}')"></div>
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-900 mb-2">
+                                <a href="{{ url_for('events.view', event_id=event.id) }}" class="hover:text-indigo-600">
+                                    {{ event.title }}
+                                </a>
+                            </h3>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                {{ event.category.name }}
+                            </span>
+                        </div>
+                        {% if event.has_available_tickets %}
+                            <span class="text-sm text-green-600 font-medium">Tickets Available</span>
+                        {% else %}
+                            <span class="text-sm text-red-600 font-medium">Sold Out</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="space-y-2 mb-4">
+                        <div class="flex items-center text-gray-600 text-sm">
+                            <i class="fas fa-calendar mr-2"></i>
+                            <span>{{ event.date.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                        </div>
+                        <div class="flex items-center text-gray-600 text-sm">
+                            <i class="fas fa-map-marker-alt mr-2"></i>
+                            <span>{{ event.location }}</span>
+                        </div>
+                        <div class="flex items-center text-gray-600 text-sm">
+                            <i class="fas fa-users mr-2"></i>
+                            <span>{{ event.registration_count }}/{{ event.capacity }} registered</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <div class="text-sm">
+                            {% if event.ticket_types %}
+                                {% set min_price = event.ticket_types|map(attribute='price')|min %}
+                                {% if min_price == 0 %}
+                                    <span class="text-green-600 font-medium">Free</span>
+                                {% else %}
+                                    <span class="text-gray-900 font-medium">From ${{ "%.2f"|format(min_price) }}</span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        <a href="{{ url_for('events.view', event_id=event.id) }}" class="btn-primary">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="col-span-full text-center py-12">
+                <h3 class="text-xl font-medium text-gray-900 mb-2">No events found</h3>
+                <p class="text-gray-600">Try adjusting your filters or check back later for new events.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
